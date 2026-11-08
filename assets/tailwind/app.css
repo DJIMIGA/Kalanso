@@ -1,0 +1,11 @@
+/* Source Tailwind. Compilée vers static/css/app.css par `npm run build:css`. Ce dossier n'est pas servi. */
+/* source(none) : Tailwind ne lit QUE les dossiers déclarés ci-dessous, jamais le reste du dépôt
+   (scripts minifiés, Python, Markdown). Le CSS produit est donc identique quel que soit l'état du dépôt. */
+@import "tailwindcss" source(none);
+@source "../../templates";
+@source "../../*/templates";
+
+/* Alpine : cache les blocs avant le premier rendu pour éviter un clignotement. */
+[x-cloak] {
+  display: none !important;
+}

@@ -1,0 +1,91 @@
+# Intégration continue : rejoue tests, vérifications et compilation des fichiers statiques sur
+# chaque PR. Pour que GitHub refuse la fusion quand elle échoue, exiger le contrôle « CI » dans la
+# protection de la branche main (voir README, « À faire une fois sur GitHub »).
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  python:
+    name: Tests et vérifications Django
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Installer uv et le Python fixé par .python-version
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          python-version-file: .python-version
+
+      - name: Installer les dépendances (uv.lock doit être à jour)
+        run: |
+          uv sync --locked \
+            || { echo "::error::uv.lock n'est pas à jour : lancer 'uv lock' et commiter."; exit 1; }
+
+      - name: Style et erreurs Python (ruff)
+        run: |
+          uv run ruff check .
+          uv run ruff format --check .
+
+      - name: Migrations à jour avec les modèles
+        run: uv run manage.py makemigrations --check --dry-run
+
+      - name: Tests automatiques
+        run: uv run pytest
+
+      - name: Réglages de production, mode école (HTTP local)
+        env:
+          DJANGO_SETTINGS_MODULE: kalanso.settings.prod
+          DJANGO_SECRET_KEY: ci-seulement-ci-seulement-ci-seulement-ci-seulement-0000
+          KALANSO_ALLOWED_HOSTS: localhost,192.168.1.20
+        run: uv run manage.py check
+
+      - name: Réglages de production, mode cloud (HTTPS)
+        env:
+          DJANGO_SETTINGS_MODULE: kalanso.settings.prod
+          DJANGO_SECRET_KEY: ci-seulement-ci-seulement-ci-seulement-ci-seulement-0000
+          KALANSO_ALLOWED_HOSTS: app.exemple.ml
+          KALANSO_HTTPS: "1"
+        run: uv run manage.py check --deploy --fail-level WARNING
+
+      - name: Collecte des fichiers statiques (comme sur le serveur de l'école)
+        env:
+          DJANGO_SETTINGS_MODULE: kalanso.settings.prod
+          DJANGO_SECRET_KEY: ci-seulement-ci-seulement-ci-seulement-ci-seulement-0000
+          KALANSO_ALLOWED_HOSTS: localhost
+        run: uv run manage.py collectstatic --no-input
+
+  assets:
+    name: CSS compilé et scripts à jour
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Recompiler le CSS et recopier les scripts
+        run: npm run build
+
+      - name: Vérifier que static/ commité correspond au résultat (ajouts, modifications, suppressions)
+        run: |
+          git add -A static
+          git diff --cached --exit-code --stat -- static \
+            || { echo "::error::static/ n'est pas à jour : lancer 'npm run build' et commiter."; exit 1; }
+
+  ci:
+    # Contrôle unique à exiger dans la protection de branche : vert seulement si tout est vert.
+    name: CI
+    if: always()
+    needs: [python, assets]
+    runs-on: ubuntu-latest
+    steps:
+      - run: test "${{ needs.python.result }}" = success -a "${{ needs.assets.result }}" = success

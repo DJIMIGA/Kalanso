@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# Django
+db.sqlite3
+db.sqlite3-journal
+staticfiles/
+.env
+
+# Node (seulement pour compiler le CSS et copier les scripts)
+node_modules/

@@ -1,0 +1,17 @@
+{
+  "name": "kalanso-assets",
+  "private": true,
+  "description": "Compilation du CSS Tailwind et copie des scripts (HTMX, Alpine) dans static/. Aucun CDN.",
+  "scripts": {
+    "build": "npm run vendor && npm run build:css",
+    "build:css": "tailwindcss -i ./assets/tailwind/app.css -o ./static/css/app.css --minify",
+    "watch:css": "tailwindcss -i ./assets/tailwind/app.css -o ./static/css/app.css --watch",
+    "vendor": "node scripts/vendor_assets.mjs"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "4.3.5",
+    "alpinejs": "3.17.5",
+    "htmx.org": "2.0.11",
+    "tailwindcss": "4.3.5"
+  }
+}

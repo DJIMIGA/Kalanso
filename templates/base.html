@@ -1,0 +1,24 @@
+{% load static %}<!doctype html>
+<html lang="fr" class="h-full">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Kalanso{% endblock %}</title>
+  {# Tout est servi par l'application elle-même : aucune ressource externe, l'école peut être hors ligne. #}
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  <script src="{% static 'vendor/htmx.min.js' %}" defer></script>
+  <script src="{% static 'vendor/alpine.min.js' %}" defer></script>
+</head>
+<body class="min-h-full bg-slate-50 text-slate-900 antialiased"
+      hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+  <header class="border-b border-slate-200 bg-white">
+    <div class="mx-auto flex max-w-4xl items-center justify-between px-4 py-3">
+      <a href="{% url 'core:home' %}" class="text-lg font-semibold tracking-tight text-emerald-700">Kalanso</a>
+      <span class="text-sm text-slate-500">{% block subtitle %}Gestion scolaire{% endblock %}</span>
+    </div>
+  </header>
+  <main class="mx-auto max-w-4xl px-4 py-8">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>
